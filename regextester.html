@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regex Tester</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem;
+            line-height: 1.5;
+        }
+        .container {
+            display: grid;
+            gap: 1rem;
+        }
+        .input-group {
+            display: grid;
+            gap: 0.5rem;
+        }
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            font-family: monospace;
+        }
+        .regex-input {
+            font-family: monospace;
+            padding: 0.5rem;
+        }
+        .flags {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .match {
+            background-color: #e6ffe6;
+        }
+        .error {
+            color: red;
+            display: none;
+        }
+        #results {
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .string-result {
+            border-left: 3px solid #ddd;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        .test-string {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Regex Tester</h1>
+    <div class="container">
+        <div class="input-group">
+            <label for="pattern">Regular Expression:</label>
+            <input type="text" id="pattern" class="regex-input" placeholder="/pattern/">
+            <div class="flags">
+                <label><input type="checkbox" id="global"> Global (g)</label>
+                <label><input type="checkbox" id="ignoreCase"> Case Insensitive (i)</label>
+                <label><input type="checkbox" id="multiline"> Multiline (m)</label>
+            </div>
+            <div id="patternError" class="error"></div>
+        </div>
+        
+        <div class="input-group">
+            <label for="testString">Test Strings (one per line):</label>
+            <textarea id="testString" placeholder="Enter text to test against the regular expression (one string per line)"></textarea>
+        </div>
+
+        <div class="input-group">
+            <h3>Results:</h3>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        const pattern = document.getElementById('pattern');
+        const testString = document.getElementById('testString');
+        const results = document.getElementById('results');
+        const patternError = document.getElementById('patternError');
+        const globalFlag = document.getElementById('global');
+        const ignoreCaseFlag = document.getElementById('ignoreCase');
+        const multilineFlag = document.getElementById('multiline');
+
+        function updateResults() {
+            const flags = [
+                globalFlag.checked ? 'g' : '',
+                ignoreCaseFlag.checked ? 'i' : '',
+                multilineFlag.checked ? 'm' : ''
+            ].join('');
+
+            try {
+                patternError.style.display = 'none';
+                const regex = new RegExp(pattern.value, flags);
+                const lines = testString.value.split('\n');
+                
+                if (lines.length === 0 || (lines.length === 1 && lines[0].trim() === '')) {
+                    results.textContent = 'No test strings provided';
+                    return;
+                }
+
+                let html = '';
+                lines.forEach((text, lineNum) => {
+                    if (text.trim() === '') return;
+                    
+                    html += `<div class="string-result">`;
+                    html += `<div class="test-string">String ${lineNum + 1}: "${text}"</div>\n`;
+                    
+                    if (globalFlag.checked) {
+                        const matches = [...text.matchAll(regex)];
+                        if (matches.length === 0) {
+                            html += 'No matches found\n';
+                        } else {
+                            matches.forEach((match, i) => {
+                                html += `Match ${i + 1}:\n`;
+                                html += `  Full match: "${match[0]}"\n`;
+                                if (match.length > 1) {
+                                    for (let j = 1; j < match.length; j++) {
+                                        html += `  Group ${j}: "${match[j]}"\n`;
+                                    }
+                                }
+                                html += `  Index: ${match.index}\n`;
+                            });
+                        }
+                    } else {
+                        const match = text.match(regex);
+                        if (!match) {
+                            html += 'No match found\n';
+                        } else {
+                            html += `Match:\n`;
+                            html += `  Full match: "${match[0]}"\n`;
+                            if (match.length > 1) {
+                                for (let i = 1; i < match.length; i++) {
+                                    html += `  Group ${i}: "${match[i]}"\n`;
+                                }
+                            }
+                            html += `  Index: ${match.index}\n`;
+                        }
+                    }
+                    html += `</div>`;
+                });
+                
+                results.innerHTML = html;
+            } catch (e) {
+                patternError.textContent = e.message;
+                patternError.style.display = 'block';
+                results.textContent = '';
+            }
+        }
+
+        pattern.addEventListener('input', updateResults);
+        testString.addEventListener('input', updateResults);
+        globalFlag.addEventListener('change', updateResults);
+        ignoreCaseFlag.addEventListener('change', updateResults);
+        multilineFlag.addEventListener('change', updateResults);
+    </script>
+</body>
+</html> 
